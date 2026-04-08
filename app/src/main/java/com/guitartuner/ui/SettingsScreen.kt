@@ -167,7 +167,7 @@ private fun SettingsSection(
         Spacer(modifier = Modifier.height(8.dp))
         content()
     }
-    HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
+    Divider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
 }
 
 @Composable
