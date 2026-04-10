@@ -53,7 +53,7 @@ class PitchDetector(
         // Guitar range: E2 (82.41Hz) to ~E5 (659Hz) with harmonics
         // tau = sampleRate / frequency
         val minTau = (sampleRate / 900.0).toInt().coerceAtLeast(2)   // Max ~900 Hz
-        val maxTau = (sampleRate / 65.0).toInt().coerceAtMost(halfBuffer - 2) // Min ~65 Hz
+        val maxTau = (sampleRate / 40.0).toInt().coerceAtMost(halfBuffer - 2) // Min ~40 Hz (8-string F#1)
 
         var tauEstimate = -1
 
@@ -90,7 +90,7 @@ class PitchDetector(
         val frequency = if (betterTau > 0) sampleRate.toDouble() / betterTau else -1.0
 
         // Reject frequencies outside guitar range
-        if (frequency < 70.0 || frequency > 900.0) return -1.0
+        if (frequency < 40.0 || frequency > 900.0) return -1.0
 
         return frequency
     }

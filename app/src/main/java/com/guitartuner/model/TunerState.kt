@@ -6,6 +6,16 @@ enum class TunerMode {
     STROBOSCOPIC, NEEDLE
 }
 
+enum class ThemeMode {
+    AUTO, DARK, LIGHT
+}
+
+enum class GuitarType(val stringCount: Int, val label: String) {
+    SIX_STRING(6, "6"),
+    SEVEN_STRING(7, "7"),
+    EIGHT_STRING(8, "8")
+}
+
 enum class AppLanguage(val code: String, val flag: String, val displayName: String) {
     PORTUGUESE("pt", "\uD83C\uDDF5\uD83C\uDDF9", "Português"),
     ENGLISH("en", "\uD83C\uDDEC\uD83C\uDDE7", "English"),
@@ -30,11 +40,17 @@ data class TunerState(
     val volume: Float = 0f,
     val isListening: Boolean = false,
     val a4Calibration: Double = 440.0,
-    val isDarkMode: Boolean = true,
+    val themeMode: ThemeMode = ThemeMode.AUTO,
     val tunerMode: TunerMode = TunerMode.STROBOSCOPIC,
     val language: AppLanguage = AppLanguage.PORTUGUESE,
     val vibrationEnabled: Boolean = true,
-    val readingsHistory: List<Double> = emptyList()
+    val guitarType: GuitarType = GuitarType.SIX_STRING,
+    val readingsHistory: List<Double> = emptyList(),
+    // Metronome
+    val metronomeBpm: Int = 120,
+    val metronomeIsPlaying: Boolean = false,
+    val metronomeBeat: Int = 0, // current beat index for visual
+    val metronomeBeatsPerMeasure: Int = 4
 ) {
     val tuningAccuracy: TuningAccuracy
         get() = when {
@@ -43,4 +59,8 @@ data class TunerState(
             abs(cents) <= 5.0 -> TuningAccuracy.CLOSE
             else -> TuningAccuracy.OFF
         }
+
+    // For backwards compatibility in theme checks
+    val isDarkMode: Boolean
+        get() = themeMode == ThemeMode.DARK
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +34,8 @@ fun TunerScreen(
     state: TunerState,
     onStartListening: () -> Unit,
     onStopListening: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onOpenMetronome: () -> Unit
 ) {
     val lang = state.language
     fun s(key: StringKey) = Strings.get(key, lang)
@@ -68,30 +70,48 @@ fun TunerScreen(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            IconButton(onClick = onOpenSettings) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = s(StringKey.SETTINGS),
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                )
+            Row {
+                IconButton(onClick = onOpenMetronome) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = s(StringKey.METRONOME),
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    )
+                }
+                IconButton(onClick = onOpenSettings) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = s(StringKey.SETTINGS),
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
 
-        // Calibration info
+        // Calibration + guitar type info
         Text(
-            text = "A4 = ${state.a4Calibration.toInt()} Hz",
+            text = "A4 = ${state.a4Calibration.toInt()} Hz  |  ${state.guitarType.stringCount} ${s(StringKey.STRINGS)}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f)
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Chromatic display - shows all 12 notes
+        ChromaticDisplay(
+            detectedNote = state.detectedNote,
+            cents = state.cents,
+            isActive = state.detectedFrequency > 0
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Note display
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 40.dp, vertical = 20.dp),
+                .padding(horizontal = 40.dp, vertical = 16.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -116,7 +136,7 @@ fun TunerScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Tuner visual: stroboscopic or needle
         when (state.tunerMode) {
@@ -135,7 +155,7 @@ fun TunerScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Cents + tuning hint
         if (state.detectedFrequency > 0) {
@@ -149,7 +169,6 @@ fun TunerScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Tuning direction hint
             val hint = when {
                 abs(state.cents) <= 2.0 -> s(StringKey.IN_TUNE)
                 state.cents < 0 -> s(StringKey.TIGHTEN)
@@ -169,12 +188,12 @@ fun TunerScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Volume indicator
         VolumeIndicator(volume = state.volume, label = s(StringKey.SIGNAL))
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Readings history
         if (state.readingsHistory.isNotEmpty()) {

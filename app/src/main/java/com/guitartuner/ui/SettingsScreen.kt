@@ -27,10 +27,11 @@ fun SettingsScreen(
     state: TunerState,
     onBack: () -> Unit,
     onTunerModeChanged: (TunerMode) -> Unit,
-    onDarkModeChanged: (Boolean) -> Unit,
+    onThemeModeChanged: (ThemeMode) -> Unit,
     onLanguageChanged: (AppLanguage) -> Unit,
     onCalibrationChanged: (Double) -> Unit,
     onVibrationChanged: (Boolean) -> Unit,
+    onGuitarTypeChanged: (GuitarType) -> Unit,
 ) {
     val lang = state.language
 
@@ -41,7 +42,6 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Top bar
         TopAppBar(
             title = {
                 Text(
@@ -89,6 +89,23 @@ fun SettingsScreen(
                 }
             }
 
+            // GUITAR TYPE
+            SettingsSection(title = s(StringKey.GUITAR_TYPE)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    GuitarType.entries.forEach { type ->
+                        ChoiceChip(
+                            label = "${type.stringCount} ${s(StringKey.STRINGS)}",
+                            selected = state.guitarType == type,
+                            onClick = { onGuitarTypeChanged(type) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
             // THEME
             SettingsSection(title = s(StringKey.THEME)) {
                 Row(
@@ -96,15 +113,21 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ChoiceChip(
+                        label = s(StringKey.AUTO),
+                        selected = state.themeMode == ThemeMode.AUTO,
+                        onClick = { onThemeModeChanged(ThemeMode.AUTO) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ChoiceChip(
                         label = s(StringKey.DARK),
-                        selected = state.isDarkMode,
-                        onClick = { onDarkModeChanged(true) },
+                        selected = state.themeMode == ThemeMode.DARK,
+                        onClick = { onThemeModeChanged(ThemeMode.DARK) },
                         modifier = Modifier.weight(1f)
                     )
                     ChoiceChip(
                         label = s(StringKey.LIGHT),
-                        selected = !state.isDarkMode,
-                        onClick = { onDarkModeChanged(false) },
+                        selected = state.themeMode == ThemeMode.LIGHT,
+                        onClick = { onThemeModeChanged(ThemeMode.LIGHT) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -209,7 +232,6 @@ private fun LanguageGrid(
     selectedLanguage: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit
 ) {
-    // 3 columns
     val languages = AppLanguage.entries
     val rows = languages.chunked(3)
 
@@ -252,7 +274,6 @@ private fun LanguageGrid(
                         )
                     }
                 }
-                // Fill empty cells in last row
                 repeat(3 - row.size) {
                     Spacer(modifier = Modifier.weight(1f))
                 }

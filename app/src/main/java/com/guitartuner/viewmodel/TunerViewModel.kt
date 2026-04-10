@@ -9,6 +9,8 @@ import android.os.VibratorManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.guitartuner.audio.AudioProcessor
+import com.guitartuner.audio.MetronomeEngine
+import com.guitartuner.data.PreferencesManager
 import com.guitartuner.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +23,9 @@ import kotlin.math.log2
 class TunerViewModel(application: Application) : AndroidViewModel(application) {
 
     private val audioProcessor = AudioProcessor()
+    private val metronomeEngine = MetronomeEngine()
+    private val prefsManager = PreferencesManager(application)
+
     private val vibrator: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val manager = application.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
         manager.defaultVibrator
@@ -29,7 +34,7 @@ class TunerViewModel(application: Application) : AndroidViewModel(application) {
         application.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     }
 
-    private val _state = MutableStateFlow(TunerState())
+    private val _state = MutableStateFlow(prefsManager.loadState())
     val state: StateFlow<TunerState> = _state.asStateFlow()
 
     private var lastVibrateTime = 0L
@@ -37,6 +42,12 @@ class TunerViewModel(application: Application) : AndroidViewModel(application) {
 
     // Median filter buffer for frequency smoothing
     private val recentFrequencies = ArrayDeque<Double>(5)
+
+    init {
+        metronomeEngine.setOnBeatListener { beat ->
+            _state.update { it.copy(metronomeBeat = beat) }
+        }
+    }
 
     fun startListening(): Boolean {
         val context = getApplication<Application>()
@@ -68,23 +79,66 @@ class TunerViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setCalibration(a4Freq: Double) {
-        _state.update { it.copy(a4Calibration = a4Freq.coerceIn(420.0, 460.0)) }
+        val clamped = a4Freq.coerceIn(420.0, 460.0)
+        _state.update { it.copy(a4Calibration = clamped) }
+        prefsManager.a4Calibration = clamped
     }
 
-    fun setDarkMode(dark: Boolean) {
-        _state.update { it.copy(isDarkMode = dark) }
+    fun setThemeMode(mode: ThemeMode) {
+        _state.update { it.copy(themeMode = mode) }
+        prefsManager.themeMode = mode
     }
 
     fun setTunerMode(mode: TunerMode) {
         _state.update { it.copy(tunerMode = mode) }
+        prefsManager.tunerMode = mode
     }
 
     fun setLanguage(language: AppLanguage) {
         _state.update { it.copy(language = language) }
+        prefsManager.language = language
     }
 
     fun setVibrationEnabled(enabled: Boolean) {
         _state.update { it.copy(vibrationEnabled = enabled) }
+        prefsManager.vibrationEnabled = enabled
+    }
+
+    fun setGuitarType(type: GuitarType) {
+        _state.update { it.copy(guitarType = type) }
+        prefsManager.guitarType = type
+    }
+
+    // Metronome controls
+    fun setMetronomeBpm(bpm: Int) {
+        val clamped = bpm.coerceIn(40, 240)
+        _state.update { it.copy(metronomeBpm = clamped) }
+        prefsManager.metronomeBpm = clamped
+        // Restart if playing to apply new BPM
+        if (_state.value.metronomeIsPlaying) {
+            metronomeEngine.stop()
+            metronomeEngine.start(clamped, _state.value.metronomeBeatsPerMeasure)
+        }
+    }
+
+    fun toggleMetronome() {
+        val current = _state.value
+        if (current.metronomeIsPlaying) {
+            metronomeEngine.stop()
+            _state.update { it.copy(metronomeIsPlaying = false, metronomeBeat = 0) }
+        } else {
+            metronomeEngine.start(current.metronomeBpm, current.metronomeBeatsPerMeasure)
+            _state.update { it.copy(metronomeIsPlaying = true) }
+        }
+    }
+
+    fun setMetronomeBeatsPerMeasure(beats: Int) {
+        val clamped = beats.coerceIn(2, 8)
+        _state.update { it.copy(metronomeBeatsPerMeasure = clamped) }
+        if (_state.value.metronomeIsPlaying) {
+            metronomeEngine.stop()
+            metronomeEngine.start(_state.value.metronomeBpm, clamped)
+        }
     }
 
     private fun processAudioResult(frequency: Double, volume: Float) {
@@ -106,12 +160,12 @@ class TunerViewModel(application: Application) : AndroidViewModel(application) {
 
         val currentState = _state.value
 
-        // Auto-detect closest guitar string
-        val closest = GuitarString.findClosest(smoothedFrequency, currentState.a4Calibration)
-        val targetFreq = closest.frequencyWithCalibration(currentState.a4Calibration)
-        val noteName = closest.noteName
+        // Chromatic note detection - find the closest note in the full chromatic scale
+        val (chromaticNote, chromaticFreq) = GuitarString.findClosestNote(
+            smoothedFrequency, currentState.a4Calibration
+        )
 
-        val cents = 1200.0 * log2(smoothedFrequency / targetFreq)
+        val cents = 1200.0 * log2(smoothedFrequency / chromaticFreq)
         val displayCents = cents.coerceIn(-50.0, 50.0)
 
         val newHistory = (currentState.readingsHistory + displayCents).takeLast(historyMaxSize)
@@ -119,8 +173,8 @@ class TunerViewModel(application: Application) : AndroidViewModel(application) {
         _state.update {
             it.copy(
                 detectedFrequency = smoothedFrequency,
-                detectedNote = noteName,
-                targetFrequency = targetFreq,
+                detectedNote = chromaticNote,
+                targetFrequency = chromaticFreq,
                 cents = displayCents,
                 volume = volume,
                 readingsHistory = newHistory
@@ -144,5 +198,6 @@ class TunerViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         audioProcessor.stop()
+        metronomeEngine.stop()
     }
 }

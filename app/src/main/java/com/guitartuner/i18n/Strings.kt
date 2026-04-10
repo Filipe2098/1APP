@@ -12,11 +12,13 @@ enum class StringKey {
     APP_TITLE,
     START_TUNING,
     STOP,
+    PLAY,
     SETTINGS,
     TUNER_MODE,
     STROBOSCOPIC,
     NEEDLE,
     THEME,
+    AUTO,
     DARK,
     LIGHT,
     LANGUAGE,
@@ -33,6 +35,10 @@ enum class StringKey {
     CENTS,
     BACK,
     MIC_PERMISSION,
+    GUITAR_TYPE,
+    STRINGS,
+    METRONOME,
+    TIME_SIGNATURE,
 }
 
 private val translations: Map<StringKey, Map<AppLanguage, String>> = mapOf(
@@ -68,6 +74,17 @@ private val translations: Map<StringKey, Map<AppLanguage, String>> = mapOf(
         AppLanguage.CHINESE to "停止",
         AppLanguage.JAPANESE to "停止",
         AppLanguage.RUSSIAN to "СТОП"
+    ),
+    StringKey.PLAY to mapOf(
+        AppLanguage.PORTUGUESE to "TOCAR",
+        AppLanguage.ENGLISH to "PLAY",
+        AppLanguage.POLISH to "GRAJ",
+        AppLanguage.SPANISH to "TOCAR",
+        AppLanguage.FRENCH to "JOUER",
+        AppLanguage.GERMAN to "SPIELEN",
+        AppLanguage.CHINESE to "播放",
+        AppLanguage.JAPANESE to "再生",
+        AppLanguage.RUSSIAN to "ИГРАТЬ"
     ),
     StringKey.SETTINGS to mapOf(
         AppLanguage.PORTUGUESE to "Definições",
@@ -123,6 +140,17 @@ private val translations: Map<StringKey, Map<AppLanguage, String>> = mapOf(
         AppLanguage.CHINESE to "主题",
         AppLanguage.JAPANESE to "テーマ",
         AppLanguage.RUSSIAN to "Тема"
+    ),
+    StringKey.AUTO to mapOf(
+        AppLanguage.PORTUGUESE to "Auto",
+        AppLanguage.ENGLISH to "Auto",
+        AppLanguage.POLISH to "Auto",
+        AppLanguage.SPANISH to "Auto",
+        AppLanguage.FRENCH to "Auto",
+        AppLanguage.GERMAN to "Auto",
+        AppLanguage.CHINESE to "自动",
+        AppLanguage.JAPANESE to "自動",
+        AppLanguage.RUSSIAN to "Авто"
     ),
     StringKey.DARK to mapOf(
         AppLanguage.PORTUGUESE to "Escuro",
@@ -299,5 +327,49 @@ private val translations: Map<StringKey, Map<AppLanguage, String>> = mapOf(
         AppLanguage.CHINESE to "需要麦克风权限",
         AppLanguage.JAPANESE to "マイクの許可が必要です",
         AppLanguage.RUSSIAN to "Требуется разрешение микрофона"
+    ),
+    StringKey.GUITAR_TYPE to mapOf(
+        AppLanguage.PORTUGUESE to "Tipo de guitarra",
+        AppLanguage.ENGLISH to "Guitar type",
+        AppLanguage.POLISH to "Typ gitary",
+        AppLanguage.SPANISH to "Tipo de guitarra",
+        AppLanguage.FRENCH to "Type de guitare",
+        AppLanguage.GERMAN to "Gitarrentyp",
+        AppLanguage.CHINESE to "吉他类型",
+        AppLanguage.JAPANESE to "ギタータイプ",
+        AppLanguage.RUSSIAN to "Тип гитары"
+    ),
+    StringKey.STRINGS to mapOf(
+        AppLanguage.PORTUGUESE to "cordas",
+        AppLanguage.ENGLISH to "strings",
+        AppLanguage.POLISH to "strun",
+        AppLanguage.SPANISH to "cuerdas",
+        AppLanguage.FRENCH to "cordes",
+        AppLanguage.GERMAN to "Saiten",
+        AppLanguage.CHINESE to "弦",
+        AppLanguage.JAPANESE to "弦",
+        AppLanguage.RUSSIAN to "струн"
+    ),
+    StringKey.METRONOME to mapOf(
+        AppLanguage.PORTUGUESE to "Metrónomo",
+        AppLanguage.ENGLISH to "Metronome",
+        AppLanguage.POLISH to "Metronom",
+        AppLanguage.SPANISH to "Metrónomo",
+        AppLanguage.FRENCH to "Métronome",
+        AppLanguage.GERMAN to "Metronom",
+        AppLanguage.CHINESE to "节拍器",
+        AppLanguage.JAPANESE to "メトロノーム",
+        AppLanguage.RUSSIAN to "Метроном"
+    ),
+    StringKey.TIME_SIGNATURE to mapOf(
+        AppLanguage.PORTUGUESE to "Compasso",
+        AppLanguage.ENGLISH to "Time signature",
+        AppLanguage.POLISH to "Metrum",
+        AppLanguage.SPANISH to "Compás",
+        AppLanguage.FRENCH to "Mesure",
+        AppLanguage.GERMAN to "Taktart",
+        AppLanguage.CHINESE to "拍号",
+        AppLanguage.JAPANESE to "拍子",
+        AppLanguage.RUSSIAN to "Размер"
     ),
 )
