@@ -42,6 +42,8 @@ fun TunerScreen(
     val lang = state.language
     fun s(key: StringKey) = Strings.get(key, lang)
 
+    val isActive = state.detectedFrequency > 0
+
     val accuracyColor by animateColorAsState(
         targetValue = when (state.tuningAccuracy) {
             TuningAccuracy.PERFECT -> TunerGreen
@@ -51,6 +53,14 @@ fun TunerScreen(
         animationSpec = tween(300),
         label = "accuracyColor"
     )
+
+    val inTuneThreshold = if (state.tunerMode == TunerMode.STROBOSCOPIC) 3.0 else 2.0
+    val tuningHint = when {
+        !isActive -> ""
+        abs(state.cents) <= inTuneThreshold -> s(StringKey.IN_TUNE)
+        state.cents < 0 -> s(StringKey.TIGHTEN)
+        else -> s(StringKey.LOOSEN)
+    }
 
     Column(
         modifier = Modifier
@@ -104,7 +114,6 @@ fun TunerScreen(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f)
             )
 
-            // HIGH PRECISION badge for bowed instruments
             if (state.isHighPrecision) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Box(
@@ -124,95 +133,90 @@ fun TunerScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Chromatic display - shows all 12 notes
+            // Chromatic display
             ChromaticDisplay(
                 detectedNote = state.detectedNote,
                 cents = state.cents,
-                isActive = state.detectedFrequency > 0
+                isActive = isActive
             )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Note display
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 40.dp, vertical = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = state.detectedNote,
-                        fontSize = 64.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        color = if (state.detectedFrequency > 0) accuracyColor
-                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
-                        textAlign = TextAlign.Center
-                    )
-
-                    if (state.detectedFrequency > 0) {
-                        Text(
-                            text = String.format("%.1f Hz", state.detectedFrequency),
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Tuner visual: stroboscopic or needle
-            when (state.tunerMode) {
-                TunerMode.STROBOSCOPIC -> {
-                    StroboscopicTuner(
-                        cents = if (state.detectedFrequency > 0) state.cents else 0.0,
-                        accuracy = state.tuningAccuracy,
-                        isActive = state.detectedFrequency > 0
-                    )
-                }
-                TunerMode.NEEDLE -> {
-                    TunerGauge(
-                        cents = if (state.detectedFrequency > 0) state.cents else 0.0,
-                        accuracy = state.tuningAccuracy
-                    )
-                }
-            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Cents + tuning hint
-            if (state.detectedFrequency > 0) {
-                Text(
-                    text = String.format("%+.1f %s", state.cents, s(StringKey.CENTS)),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = FontFamily.Monospace,
-                    color = accuracyColor
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                val hint = when {
-                    abs(state.cents) <= 2.0 -> s(StringKey.IN_TUNE)
-                    state.cents < 0 -> s(StringKey.TIGHTEN)
-                    else -> s(StringKey.LOOSEN)
+            // Mode-specific visual
+            when (state.tunerMode) {
+                TunerMode.STROBOSCOPIC -> {
+                    StroboscopicTuner(
+                        cents = if (isActive) state.cents else 0.0,
+                        frequency = state.detectedFrequency,
+                        detectedNote = state.detectedNote,
+                        isActive = isActive,
+                        centsRange = state.centsRange,
+                        tuningHint = tuningHint
+                    )
                 }
-                Text(
-                    text = hint,
-                    fontSize = 14.sp,
-                    color = accuracyColor.copy(alpha = 0.8f)
-                )
-            } else {
-                Text(
-                    text = "-- ${s(StringKey.CENTS)}",
-                    fontSize = 22.sp,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
-                )
+
+                TunerMode.NEEDLE -> {
+                    // Note display
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(horizontal = 40.dp, vertical = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = state.detectedNote,
+                                fontSize = 64.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                color = if (isActive) accuracyColor
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                textAlign = TextAlign.Center
+                            )
+                            if (isActive) {
+                                Text(
+                                    text = String.format("%.1f Hz", state.detectedFrequency),
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    TunerGauge(
+                        cents = if (isActive) state.cents else 0.0,
+                        accuracy = state.tuningAccuracy
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (isActive) {
+                        Text(
+                            text = String.format("%+.1f %s", state.cents, s(StringKey.CENTS)),
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = FontFamily.Monospace,
+                            color = accuracyColor
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = tuningHint,
+                            fontSize = 14.sp,
+                            color = accuracyColor.copy(alpha = 0.8f)
+                        )
+                    } else {
+                        Text(
+                            text = "-- ${s(StringKey.CENTS)}",
+                            fontSize = 22.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -234,15 +238,14 @@ fun TunerScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Start/Stop button - fixed at bottom, never squished
+        // Start/Stop button — fixed at bottom
         Button(
             onClick = {
                 if (state.isListening) onStopListening() else onStartListening()
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .padding(bottom = 0.dp),
+                .height(56.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (state.isListening)
                     MaterialTheme.colorScheme.error
